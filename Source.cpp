@@ -27,8 +27,6 @@ WinPos* windowPositions;
 bool appShouldClose = false;
 
 int main(void) {
-
-
 	puts("Started execution!~");
 
 	// Pointer-array of processes
