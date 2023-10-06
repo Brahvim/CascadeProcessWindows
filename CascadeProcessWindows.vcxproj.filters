@@ -15,16 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PidToWindowHandle.h">
+    <ClCompile Include="PidToWindowHandle.hpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WinPos.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MyExit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PidToWindowHandle.cpp">
@@ -32,10 +29,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WinPos.h">
+    <ClInclude Include="WinPos.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CascadeProcessWindowsErrors.h">
+    <ClInclude Include="CascadeProcessWindows.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

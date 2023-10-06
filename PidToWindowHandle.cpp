@@ -1,24 +1,37 @@
-#include "PidToWindowHandle.h"
+#include "PidToWindowHandle.hpp"
 
-static HWND s_WinHandleRef = NULL;
-// ^^^ Could have made this a variable for JUST this file using `static`, 
-// but I liked the idea of portability for this code!~
+static HWND s_winHandleRef = NULL;
 
-// [https://stackoverflow.com/a/20730976/13951505]
-BOOL CALLBACK _WindowEnumProc(HWND p_winHandle, LPARAM p_lParam) {
-	DWORD procId;
-	GetWindowThreadProcessId(p_winHandle, &procId);
+namespace NsCascadeProcWin {
 
-	// If-else guard clause!:
-	if (procId != p_lParam)
-		return TRUE;
+	// [https://stackoverflow.com/a/20730976/13951505]
+	BOOL CALLBACK windowEnumProc(const HWND p_winHandle, const LPARAM p_lParam) {
+		DWORD procId;
+		GetWindowThreadProcessId(p_winHandle, &procId);
 
-	s_WinHandleRef = p_winHandle;
-	return FALSE;
-}
+		// If-else guard clause!:
+		if (procId != p_lParam)
+			return TRUE;
 
-BOOL GetWindowHandleFromPid(DWORD p_procId, HWND& p_winHandle) {
-	BOOL status = EnumWindows(_WindowEnumProc, p_procId);
-	p_winHandle = s_WinHandleRef;
-	return status;
-}
+		s_winHandleRef = p_winHandle;
+		return FALSE;
+	}
+
+	BOOL getWindowHandleFromPid(const DWORD p_procId, HWND& p_winHandle) {
+		const BOOL status = EnumWindows([](const HWND p_winHandle, const LPARAM p_lParam) {
+			DWORD procId;
+			GetWindowThreadProcessId(p_winHandle, &procId);
+
+			// If-else guard clause!:
+			if (procId != p_lParam)
+				return TRUE;
+
+			s_winHandleRef = p_winHandle;
+			return FALSE;
+		}, p_procId);
+
+		p_winHandle = s_winHandleRef;
+		return status;
+	}
+
+};
