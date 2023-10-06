@@ -92,7 +92,7 @@ int main(void) {
 	CPW_DEBUG_LOG("Start!");
 
 	// [https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes]
-	DWORD pidsVectorRequiredSize = -1;
+	DWORD pidsVectorRequiredSize = 0L;
 	std::vector<DWORD> processIds(1024, NULL);
 
 	CPW_DEBUG_LOG("Getting current list of processes...");
@@ -123,7 +123,7 @@ int main(void) {
 		if (currentHandle != 0) {
 			GetWindowRect(currentHandle, &currentRect);
 			actualWindowCount++;
-		} else {
+
 			s_windowPositions[i] = WinPos(currentRect.left, currentRect.right,
 				currentRect.top, currentRect.bottom);
 		}
