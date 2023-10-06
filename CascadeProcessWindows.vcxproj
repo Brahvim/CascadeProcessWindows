@@ -127,14 +127,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="PidToWindowHandle.cpp" />
-    <ClCompile Include="PidToWindowHandle.hpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="WinPos.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CascadeProcessWindows.hpp" />
-    <ClInclude Include="WinPos.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

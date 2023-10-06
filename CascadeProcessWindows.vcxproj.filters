@@ -18,20 +18,8 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PidToWindowHandle.hpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WinPos.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PidToWindowHandle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WinPos.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CascadeProcessWindows.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
