@@ -5,19 +5,19 @@
 namespace NsCascadeProcWin {
 
 	struct WinPos {
+	public:
 		int left, right, top, bottom;
-		//int left = 0, right = 0, top = 0, bottom = 0;
-		// ^^^ The initializer list is invoked anyway, so I better do this!
 
-		WinPos() : left(0), right(0), top(0), bottom(0) {};
+		WinPos()
+			: left(0), right(0), top(0), bottom(0) {};
 
-		WinPos(int p_left, int p_right, int p_top, int p_bottom) :
-			left(p_left), right(p_right), top(p_top), bottom(p_bottom) {}
+		WinPos(const int p_left, const int p_right, const int p_top, const int p_bottom)
+			: left(p_left), right(p_right), top(p_top), bottom(p_bottom) {}
 	};
 
 	static DWORD s_numProcs = 0L;
-	static HWND *s_windowHandles;
 	static bool s_appShouldClose = false;
+	static HWND *s_windowHandles = nullptr;
 	static WinPos *s_windowPositions = nullptr;
 
 	BOOL getWindowHandleFromPid(const DWORD p_procId, HWND &p_winHandle) {
@@ -27,6 +27,9 @@ namespace NsCascadeProcWin {
 		const BOOL status = EnumWindows([](const HWND p_winHandle, const LPARAM p_lParam) {
 			DWORD procId = 0L;
 			GetWindowThreadProcessId(p_winHandle, &procId);
+
+			if (procId == g_currProcId)
+				return FALSE;
 
 			// If-else guard clause!:
 			if (procId != p_lParam)
@@ -41,21 +44,31 @@ namespace NsCascadeProcWin {
 	}
 
 	void cpwExit(const char p_errorCode) {
-		const char *errMsg = (const char *)nullptr;
+		const char *errMsg = "";
 
 		switch (p_errorCode) {
+			case EXIT_SUCCESS:
+			errMsg = "Successful exit.";
+			break;
+
+			case EXIT_FAILURE:
+			errMsg = "Some failure...";
+			break;
+
 			case CPW_PROC_ARRAY_ALLOC_FAILED:
-			{
-				errMsg = "Allocating the array of processes failed!";
-			} break;
+			errMsg = "Allocating the array of processes failed!";
+			break;
 
 			case CPW_ENUM_PROC_FAILED:
-			{
-				errMsg = "Enumerating through processes failed!";
-			} break;
+			errMsg = "Enumerating through processes failed!";
+			break;
 		}
 
-		CPW_DEBUG_LOG("Error! Code:`" << p_errorCode << "`, Message: " << errMsg);
+		std::cout
+			<< "Exiting! Code: `" << p_errorCode
+			<< "`, Message: " << errMsg
+			<< std::endl;
+
 		std::exit(p_errorCode);
 	}
 
@@ -64,6 +77,7 @@ namespace NsCascadeProcWin {
 		static WinPos currentPos;
 		static HWND currentHandle;
 
+		Sleep(10);
 		frame++;
 
 		for (UINT i = 0; i < s_numProcs - 1; i++) {
@@ -71,7 +85,7 @@ namespace NsCascadeProcWin {
 			currentPos = s_windowPositions[i];
 
 			if (currentHandle == NULL) {
-				CPW_DEBUG_LOG("Skipped a window!");
+				//CPW_DEBUG_LOG("Skipped a window!");
 				continue;
 			}
 
@@ -91,60 +105,71 @@ int main(void) {
 
 	CPW_DEBUG_LOG("Start!");
 
+	// Getting a list of all processes:
 	// [https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes]
-	DWORD pidsVectorRequiredSize = 0L;
-	std::vector<DWORD> processIds(1024, NULL);
 
-	CPW_DEBUG_LOG("Getting current list of processes...");
+	// Make an `std::vector` to store all PIDs:
+	std::vector<DWORD> processIds(1024L, NULL);
+	DWORD pidsVectorRequiredSize = -1L; // We do not yet know how many there are.
 
+	std::cout << "Getting current list of processes..." << std::endl;
 	if (!EnumProcesses(processIds.data(), (DWORD) processIds.size(), &pidsVectorRequiredSize))
-		exit(CPW_ENUM_PROC_FAILED);
+		cpwExit(CPW_ENUM_PROC_FAILED);
 
 	// Calculate the length of that list:
 	s_numProcs = pidsVectorRequiredSize / sizeof(DWORD);
 
-	printf("Found `%lu` processes.\n", s_numProcs);
-
-	CPW_DEBUG_LOG("Getting window handles...");
+	std::cout << "Found `" << s_numProcs << "` processes." << std::endl;
+	std::cout << "Getting window handles..." << std::endl;
 
 	s_windowHandles = new HWND[s_numProcs];
 	s_windowPositions = new WinPos[s_numProcs];
+	std::cout << "(Just finished allocating for them.)" << std::endl;
 
-	UINT actualWindowCount = 0;
 	RECT currentRect = {0};
+	UINT actualWindowCount = 0;
 	HWND currentHandle = nullptr;
 
+	// Get handles to windows of all processes:
 	for (UINT i = 0; i < s_numProcs; i++) {
 		if (!getWindowHandleFromPid(processIds[i], currentHandle))
 			continue;
 
-		s_windowHandles[i] = currentHandle;
-
 		if (currentHandle != 0) {
-			GetWindowRect(currentHandle, &currentRect);
-			actualWindowCount++;
+			s_windowHandles[i] = currentHandle;
 
-			s_windowPositions[i] = WinPos(currentRect.left, currentRect.right,
+			if (GetWindowRect(currentHandle, &currentRect))
+				actualWindowCount++;
+
+			s_windowPositions[i] = WinPos(
+				currentRect.left, currentRect.right,
 				currentRect.top, currentRect.bottom);
 		}
 	}
 
-	CPW_DEBUG_LOG("Succesfully scanned through `" << actualWindowCount << "` windows!");
+	std::cout
+		<< "Succesfully found `" << actualWindowCount << "` windows!"
+		<< std::endl;
 
-	std::thread appLoopThread([] {
+	HANDLE appLoopThreadId = NULL;
+
+	while (appLoopThreadId == NULL)
+		appLoopThreadId = CreateThread(NULL, 0, [](LPVOID p_lParam) -> DWORD {
 		while (true)
 			appLoop();
-	});
+	}, nullptr, 0, NULL);
 
-	appLoopThread.join();
 
-	std::thread exitDetectorThread([] {
-		std::cout << "Exit-detection thread started..." << std::endl;
-		exit(EXIT_SUCCESS);
-		std::cout << "Yo! You pressed a key!" << std::endl;
-		(void) getchar();
-	});
+	//auto b = [] {
+	//std::cout << "Exit-detection thread started..." << std::endl;
+	//cpwExit(EXIT_SUCCESS);
+	//std::cout << "Yo! You pressed a key!" << std::endl;
+	//(void) getchar();
+	//};
 
+	//appLoopThread.join();
+
+	// Move every window to the top-left:
 	for (UINT i = 0; i < s_numProcs; i++) {
 		WinPos currentPos = s_windowPositions[i];
 		currentHandle = s_windowHandles[i];
@@ -156,8 +181,11 @@ int main(void) {
 			currentPos.bottom - currentPos.top, TRUE);
 	}
 
-	CPW_DEBUG_LOG("Everything should be normal now - bye!~");
-
+	CPW_DEBUG_LOG("De-allocating stuff...");
+	CloseHandle(appLoopThreadId);
 	delete[] s_windowHandles;
 	delete[] s_windowPositions;
+	CPW_DEBUG_LOG("De-allo*cated* stuff!");
+
+	cpwExit(EXIT_SUCCESS);
 }
